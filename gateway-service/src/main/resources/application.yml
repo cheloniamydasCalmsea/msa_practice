@@ -1,0 +1,85 @@
+server:
+  port: 8000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      #외부값을 가져다가 할수있다. 그럼 수정 후에 무조건 배포 작업을 안해도 , 재시작을안해도 바로 적용할수있다는 이야기이다. 8장에 말한다는데..?
+      default-filters:
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
+      
+      routes:
+      - id: order-service
+        uri: lb://ORDER-SERVICE
+        predicates:
+        - Path=/order-service/**
+        filters:
+        - CustomFilter
+      - id: catalog-service
+        uri: lb://CATALOG-SERVICE
+        predicates:
+        - Path=/catalog-service/**
+        filters:
+        - CustomFilter
+      - id: user-service
+        uri: lb://USER-SERVICE
+        predicates:
+        - Path=/user-service/login
+        - Method=POST
+        filters:
+        - RemoveRequestHeader=Cookie
+        - RewritePath=/user-service/?(?<segment>.*), /$\{segment}
+        - CustomFilter
+      - id: user-service
+        uri: lb://USER-SERVICE
+        predicates:
+        - Path=/user-service/users
+        - Method=POST
+        filters:
+        - RemoveRequestHeader=Cookie
+        - RewritePath=/user-service/?(?<segment>.*), /$\{segment}
+        - CustomFilter
+      - id: user-service
+        uri: lb://USER-SERVICE
+        predicates:
+        - Path=/user-service/**
+        - Method=GET
+        filters:
+        - RemoveRequestHeader=Cookie
+        - RewritePath=/user-service/?(?<segment>.*), /$\{segment}
+        - CustomFilter
+#      - id: user-service
+#        uri: lb://USER-SERVICE
+#        predicates:
+#        - Path=/user-service/**
+#        filters:
+#        - CustomFilter
+
+#      - id: second-service
+##        uri: http://localhost:8082/
+#        uri: lb://MY-SECOND-SERVICE
+#        predicates:
+#        - Path=/second-service/**
+#        filters:
+##        - AddRequestHeader=second-request, second-request-header2
+##        - AddResponseHeader=second-response, second-response-header2
+#        - name: CustomFilter
+#        - name: LoggingFilter
+#          args:
+#            baseMessage: Hi, there(logging).
+#            preLogger: true
+#            postLogger: true
+
